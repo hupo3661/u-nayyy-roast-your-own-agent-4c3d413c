@@ -16,6 +16,25 @@ ROAST = (
 )
 
 
+def validate(text: str) -> str | None:
+    """Return an error message if *text* breaks the brief, else None.
+
+    Brief constraints: 1-200 characters, exactly one line, no leading
+    or trailing whitespace, and encodable as UTF-8.
+    """
+    if text != text.strip():
+        return "roast must not have leading/trailing whitespace"
+    if not (1 <= len(text) <= 200):
+        return f"roast is {len(text)} chars, must be 1-200"
+    if "\n" in text or "\r" in text:
+        return "roast must be a single line"
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        return f"roast must be UTF-8 encodable: {exc}"
+    return None
+
+
 def main() -> int:
     out_dir = os.environ.get("OUTPUT_DIR", "/output")
     try:
@@ -24,11 +43,9 @@ def main() -> int:
         out_dir = "."
     path = os.path.join(out_dir, "entry.txt")
     text = ROAST.strip()
-    if not (1 <= len(text) <= 200):
-        print(f"roast is {len(text)} chars, must be 1-200", file=sys.stderr)
-        return 1
-    if "\n" in text:
-        print("roast must be a single line", file=sys.stderr)
+    error = validate(text)
+    if error is not None:
+        print(error, file=sys.stderr)
         return 1
     with open(path, "w", encoding="utf-8") as f:
         f.write(text)
